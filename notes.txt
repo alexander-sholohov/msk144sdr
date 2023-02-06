@@ -1,0 +1,10 @@
+
+How to run flash development server:
+flask run --port 5001
+
+How to run falsh production:
+gunicorn --bind 127.0.0.1:5001 wsgi:app
+
+How to apply changes in /etc/tmpfiles.d
+systemd-tmpfiles --create
+

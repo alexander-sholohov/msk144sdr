@@ -1,0 +1,15 @@
+[Unit]
+Description=Msk144 WF
+After=rc-local.service
+
+[Service]
+Type=simple
+User=sholohov
+Group=sholohov
+Environment="PATH=/opt/spot/msk144wf/.venv/bin:/bin"
+WorkingDirectory=/opt/spot/msk144wf
+ExecStart=/bin/sh run.sh 
+
+[Install]
+WantedBy=multi-user.target
+

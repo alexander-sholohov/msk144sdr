@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+
+
+    <script src="{{ url_for('static', filename= 'js/msk144sdr.js') }}"></script>
+
+
+    <title>Spots</title>
+  </head>
+  <body onload="bodyonload();">
+
+    <div class="container">
+        <div id="wfbox" class="row_wf_container">
+            <!-- div class="row_wf">
+                <img src="waterfall_files/20230205/w20230205102700.png">
+            </div -->
+
+        </div>
+        <div class="content">
+            <div>
+                <hr>
+                <div style="display:flex; align-self: left; align-items: left; justify-content: left; width: 1024px;">
+
+                    <div id="chatccontainer">
+                        <div id="chatcontainer" style="position:relative; transform-origin: 0% 0%;" class="clear">
+                            <font size="3" align="left">
+                                <div id="spotsboxspan" style="width: 600px;">
+                                    <p><b>Spots:</b><br>
+                                        <span style="font-size:100%">
+                                        Latest MSK144 spots.
+                                        </span>
+                                    </p>
+                                    
+                                    <div id="spotsboxnew" class="spots">
+                                        <!-- <br>27 Jan 2333z , Line2 -->
+                                    </div>
+                                    <br>
+                                </div>
+                                <hr>
+                            </font>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+  </body>
+</html>
+
