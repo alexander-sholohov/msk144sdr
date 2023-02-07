@@ -9,53 +9,102 @@ import sys
 import time
 import argparse
 from threading import Thread
-
-
-g_enable_dummy_stream_consumer = True
+from queue import Queue, Full, Empty
 
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
-def dummy_stream_consumer():
-    while True:
-        if g_enable_dummy_stream_consumer:
-            bb = sys.stdin.buffer.read(512)
-        else:
-            time.sleep(0.5)
+class Context:
+    def __init__(self) -> None:
+        self.is_write_to_queue_enabled = False
+        self.queue = Queue(32)
+        self.socket = None
+        self.flag_stop = False
 
 
-def process(connection):
+def process(connection, ctx: Context):
     try:
-        while True:
-            bb = sys.stdin.buffer.read(512)
-            if len(bb) != 512:
-                eprint("Stream2tcp. Incomplete read from stdin. return. len={}".format(len(bb)))
-                connection.close()
-                return
-            connection.send(bb)
+        while not ctx.flag_stop:
+            try:
+                bb = ctx.queue.get(timeout=0.5)
+            except Empty:
+                pass
+            except:
+                raise
+            else:
+                rc = connection.send(bb)
+                if rc != len(bb):
+                    eprint("Stream2tcp. Incomplete send. len={}".format(rc))
+                    connection.close()
+                    return
     except Exception as ex:
         eprint("Stream2tcp. Error: {}".format(ex))
 
 
-def main(addr_pair):
-    global g_enable_dummy_stream_consumer
-    thread = Thread(target=dummy_stream_consumer)
-    thread.start()
-
+def tcp_thread(addr_pair, ctx: Context):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(1)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(addr_pair)
     sock.listen(1)
-    while True:
-        eprint("stream2tcp. Before accept ...")
-        connection, address = sock.accept()
-        eprint("stream2tcp. Connection accepted from: {}".format(address))
-        #
-        g_enable_dummy_stream_consumer = False
-        process(connection)
-        g_enable_dummy_stream_consumer = True
+
+    flag_msg_once = True
+    while not ctx.flag_stop:
+        if flag_msg_once:
+            eprint("stream2tcp. Before accept ...")
+            flag_msg_once = False
+        try:
+            connection, address = sock.accept()
+        except socket.timeout:
+            pass
+        except:
+            raise
+        else:
+            flag_msg_once = True
+            eprint("stream2tcp. Connection accepted from: {}".format(address))
+            #
+            ctx.is_write_to_queue_enabled = True
+            ctx.socket = connection
+            process(connection, ctx)
+            ctx.socket = None
+            ctx.is_write_to_queue_enabled = False
+
+            # clear queue
+            while not ctx.queue.empty():
+                try:
+                    ctx.queue.get(block=False)
+                except Empty:
+                    break
+            time.sleep(1) # for some reason
+
+def main(addr_pair):
+    ctx = Context()
+
+    thread = Thread(target=tcp_thread, args=(addr_pair, ctx))
+    thread.start()
+
+    try:
+        while True:
+            bb = sys.stdin.buffer.read(512)
+            if len(bb) != 512:
+                raise Exception(
+                    "Stream2tcp. Incomplete read from stdin. len={}".format(len(bb)))
+            if ctx.is_write_to_queue_enabled:
+                try:
+                    ctx.queue.put(bb, block=False)
+                except Full:
+                    if ctx.socket:
+                        eprint("Stream2tcp. buffer full. close socket.")
+                        ctx.socket.close()
+                        ctx.socket = None
+                        ctx.is_write_to_queue_enabled = False
+                    else:
+                        eprint("f")
+    except:
+        ctx.flag_stop = True
+        raise
 
 
 if __name__ == "__main__":
