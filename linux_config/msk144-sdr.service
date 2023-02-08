@@ -6,9 +6,7 @@ After=rc-local.service
 Type=simple
 User=sholohov
 Group=sholohov
-#LimitCORE=infinity
 WorkingDirectory=/opt/spot/msk144sdr
-#Environment=LD_LIBRARY_PATH=/opt/spot/spot_decoder
 ExecStart=/opt/spot/msk144sdr/.venv/bin/gunicorn --bind 127.0.0.1:5001 wsgi:app
 #TimeoutStopSec=10
 #Restart=on-failure
