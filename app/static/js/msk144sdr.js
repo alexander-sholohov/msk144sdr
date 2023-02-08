@@ -4,6 +4,9 @@
  * @date   Mon Feb 06 2023
  */
 
+// Source code available at https://github.com/alexander-sholohov/msk144sdr
+
+
 var last_launch_id = -1;
 var spot_last_record_id = 0;
 var wf_last_record_id = 0;
