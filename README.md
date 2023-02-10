@@ -1,6 +1,6 @@
-MSK144 Web SDR Server and Spot Reporter.
+## MSK144 Web SDR Server and Spot Reporter.
 
-Brief documentation:
+### Brief documentation:
 
 The project is a Flask based web server. You can run it in development mode as:
 ```shell
