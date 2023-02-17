@@ -69,7 +69,7 @@ class FifoOut:
 
 def fifo_thread(fifo_obj: FifoOut):
     while fifo_obj.is_alive and not fifo_obj.flag_stop:
-        eprint("FIFO '{}' is openning ...".format(fifo_obj.filename))
+        eprint("FIFO '{}' is opening ...".format(fifo_obj.filename))
         # We block on open util peer connect!
         fifo_obj.fo = open(fifo_obj.filename, "wb")
         eprint("FIFO '{}' opened. ".format(fifo_obj.filename))
@@ -83,15 +83,15 @@ def fifo_thread(fifo_obj: FifoOut):
                 except:
                     raise
                 else:
-                    writen = fifo_obj.fo.write(bb)
-                    if writen != len(bb):
-                        eprint("Stream2tcp. Incomplete send. len={}".format(writen))
+                    written = fifo_obj.fo.write(bb)
+                    if written != len(bb):
+                        eprint("Stream2tcp. Incomplete send. len={}".format(written))
                         fifo_obj.is_alive = False
                         fifo_obj.fo.close()
                         return
         except IOError as ex:
             if ex.errno == errno.EPIPE:
-                eprint("Broken pipe detectected. Reopen FIFO.")
+                eprint("Broken pipe detected. Reopen FIFO.")
             else:
                 fifo_obj.is_alive = False
                 eprint("fifo_thread. IOError: {}".format(ex))
