@@ -3,10 +3,13 @@
 # @author Alexander Sholokhov <ra9yer(at)yahoo.com>
 # @date   Sun Feb 12 2023
 #
+# License: MIT
+#
 
 import sys
 import os
 import stat
+import errno
 import argparse
 from threading import Thread
 import queue
@@ -65,29 +68,36 @@ class FifoOut:
 
 
 def fifo_thread(fifo_obj: FifoOut):
-    eprint("FIFO '{}' is openning ...".format(fifo_obj.filename))
-    # We block on open util peer connect!
-    fifo_obj.fo = open(fifo_obj.filename, "wb")
-    eprint("FIFO '{}' opened. ".format(fifo_obj.filename))
+    while fifo_obj.is_alive and not fifo_obj.flag_stop:
+        eprint("FIFO '{}' is openning ...".format(fifo_obj.filename))
+        # We block on open util peer connect!
+        fifo_obj.fo = open(fifo_obj.filename, "wb")
+        eprint("FIFO '{}' opened. ".format(fifo_obj.filename))
 
-    try:
-        while not fifo_obj.flag_stop:
-            try:
-                bb = fifo_obj.queue.get(timeout=0.5)
-            except queue.Empty:
-                pass
-            except:
-                raise
+        try:
+            while not fifo_obj.flag_stop:
+                try:
+                    bb = fifo_obj.queue.get(timeout=0.5)
+                except queue.Empty:
+                    pass
+                except:
+                    raise
+                else:
+                    writen = fifo_obj.fo.write(bb)
+                    if writen != len(bb):
+                        eprint("Stream2tcp. Incomplete send. len={}".format(writen))
+                        fifo_obj.is_alive = False
+                        fifo_obj.fo.close()
+                        return
+        except IOError as ex:
+            if ex.errno == errno.EPIPE:
+                eprint("Broken pipe detectected. Reopen FIFO.")
             else:
-                writen = fifo_obj.fo.write(bb)
-                if writen != len(bb):
-                    eprint("Stream2tcp. Incomplete send. len={}".format(writen))
-                    fifo_obj.is_alive = False
-                    fifo_obj.fo.close()
-                    return
-    except Exception as ex:
-        fifo_obj.is_alive = False
-        eprint("fifo_thread. Error: {}".format(ex))
+                fifo_obj.is_alive = False
+                eprint("fifo_thread. IOError: {}".format(ex))
+        except Exception as ex:
+            fifo_obj.is_alive = False
+            eprint("fifo_thread. Exception: {}".format(ex))
 
 
 def main(out_names, ignore_full_fifo_names, in_file):
